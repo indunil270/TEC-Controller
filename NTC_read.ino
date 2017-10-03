@@ -6,15 +6,6 @@
  * Author : Indunl and Michael
  */ 
 
-
-#include <PID_v1.h>
-#include <LiquidCrystal.h>
-#include <avr/interrupt.h>
-
-#define INDICATOR_PIN 13
-
-const int rs = 12, en = 11, d4 = 5, d5 = 4, d6 = 3, d7 = 8;
-LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 /*
 The circuit:
  * LCD RS pin to digital pin 12
@@ -24,7 +15,19 @@ The circuit:
  * LCD D6 pin to digital pin 3
  * LCD D7 pin to digital pin 8
  * LCD R/W pin to ground
+ 
+ * Interrupt Pin 2 used for messure NTC using N555
 */
+
+#include <PID_v1.h>
+#include <LiquidCrystal.h>
+#include <avr/interrupt.h>
+
+#define INDICATOR_PIN 13
+
+const int rs = 12, en = 11, d4 = 5, d5 = 4, d6 = 3, d7 = 8;
+LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
+
 
 static double Vref = 5.14;  //laptop 5.12;
 double ntcTemp,ad590Temp,set_value;
