@@ -1,3 +1,10 @@
+/*
+ * TEC-Controller
+ * Tepmrature sensor NTC
+ *
+ * 
+ * Author : Indunl and Michael
+ */ 
 
 
 #include <PID_v1.h>
