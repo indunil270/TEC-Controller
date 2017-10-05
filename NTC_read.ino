@@ -11,7 +11,7 @@
 const int rs = 12, en = 11, d4 = 5, d5 = 4, d6 = 3, d7 = 8;
 LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 /*
-The circuit:
+The LCD circuit:
  * LCD RS pin to digital pin 12
  * LCD Enable pin to digital pin 11
  * LCD D4 pin to digital pin 5
@@ -19,6 +19,13 @@ The circuit:
  * LCD D6 pin to digital pin 3
  * LCD D7 pin to digital pin 8
  * LCD R/W pin to ground
+ 
+ The Input output pin
+ Pin A3 : Set tempature 
+ Pin A2 : AD590 input
+ Pin 2  : Interrupt from N555 timer circuit for NTC mesurment (green)
+ Pin 9  : PWM Heatting (two colour)
+ Pin 10 : PWM Colling (two colour)
 */
 
 static double Vref = 5.10;  //laptop 5.12;
