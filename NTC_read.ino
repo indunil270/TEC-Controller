@@ -1,11 +1,15 @@
-/*
- * TEC-Controller
- * Tepmrature sensor NTC
- *
- * 
- * Author : Indunl and Michael
- */ 
 
+
+#include <PID_v1.h>
+#include <LiquidCrystal.h>
+#include <avr/interrupt.h>
+
+#define INDICATOR_PIN 13
+#define HEATING_PIN 9
+#define COOLING_PIN 10
+
+const int rs = 12, en = 11, d4 = 5, d5 = 4, d6 = 3, d7 = 8;
+LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 /*
 The circuit:
  * LCD RS pin to digital pin 12
@@ -15,41 +19,28 @@ The circuit:
  * LCD D6 pin to digital pin 3
  * LCD D7 pin to digital pin 8
  * LCD R/W pin to ground
- 
- * Interrupt Pin 2 used for messure NTC using N555
 */
 
-#include <PID_v1.h>
-#include <LiquidCrystal.h>
-#include <avr/interrupt.h>
-
-#define INDICATOR_PIN 13
-
-const int rs = 12, en = 11, d4 = 5, d5 = 4, d6 = 3, d7 = 8;
-LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
-
-
-static double Vref = 5.14;  //laptop 5.12;
-double ntcTemp,ad590Temp,set_value;
-int pwmPin = 9;
+static double Vref = 5.10;  //laptop 5.12;
+double ntcTemp, ad590Temp;
+int pwmPin;
 static volatile double time_read_rising;
 static volatile double time_read_falling;
 
 
 double Setpoint, Input, Output;
-PID myPID(&Input, &Output, &Setpoint, 2, 5, 1, DIRECT);
+PID myPID(&Input, &Output, &Setpoint, 1.5, 6, 1, DIRECT);
 
 void setup() {
  Serial.begin(115200);
+ 
  lcd.begin(16,2);
  lcd.clear();
 
  myPID.SetMode(AUTOMATIC);
- Setpoint = 15;
+ pwmPin = HEATING_PIN;
 
- 
  digitalWrite(INDICATOR_PIN, LOW);
-
 
 }
 
@@ -60,30 +51,42 @@ void loop() {
   Serial.print("NTC");
   Serial.print("\t");
   Serial.print(ntcTemp);
-  Serial.print("\t");
+  Serial.print("\t"); 
 
   ad590Temp = Read_AD590(Vref);
   
-  //Serial.print("AD590");
-  //Serial.print("\t");
-  //Serial.println(ad590Temp);
+  Serial.print("AD590");
+  Serial.print("\t");
+  Serial.println(ad590Temp);
 
-  set_value = Read_input();
+  Setpoint = Read_input();
+  Serial.print("SET");
+  Serial.print("\t");
+  Serial.print(Setpoint);
+  Serial.print("\t"); 
   
   lcd.clear();
   lcd.setCursor(0,0);
   lcd.print("SET Temp");
   lcd.setCursor(10,0);
-  lcd.print(set_value);
+  lcd.print(Setpoint);
   lcd.setCursor(0,1);
   lcd.print("NTC");
   lcd.setCursor(7,1);
   lcd.print(ntcTemp);
 
-  Input = ad590Temp;
+  Input = ntcTemp;
+  if(Input <= Setpoint){
+  	myPID.SetControllerDirection(DIRECT);
+    analogWrite(COOLING_PIN, 0);
+  	pwmPin = HEATING_PIN;
+  } else {
+  	myPID.SetControllerDirection(REVERSE);
+    analogWrite(HEATING_PIN, 0);
+  	pwmPin = COOLING_PIN;
+  }
   myPID.Compute();
- // Serial.println(Output);
-  analogWrite(pwmPin, Output); 
+  analogWrite(pwmPin, Output);
 }
 //************************************************
 void ISR_Rising(void){
@@ -115,7 +118,7 @@ double Read_NTC(void){
     done = true;
      
     while(done){
-      if (time_read_rising> time_rising_prev){
+      if (time_read_rising > time_rising_prev){
         time_rising_prev = time_read_rising;
       }     
       
@@ -128,19 +131,20 @@ double Read_NTC(void){
       
        t_h = time_read_falling - time_rising_prev;
        t_l = time_read_rising - time_read_falling;
-       Rt = Rt + ((t_h/t_l)-1)*9940;
+       Rt = Rt + ((t_h/t_l)-1)*9905;
   }
   cli();
   
   Rt = Rt/i;   
-      Serial.print("Res");
-      Serial.print("\t");
-      Serial.println(Rt); 
+//  Serial.print("Res");
+//  Serial.print("\t");
+//  Serial.print(Rt);
+//  Serial.print("\t"); 
   
  
 
-  Rt = (Rt - 11860.0)/3464.0;   //Normalization
-  ntcTemp = -0.5751*Rt*Rt*Rt + 2.164*Rt*Rt - 10.32*Rt + 20.49;   //Calibration temp in celsius
+  Rt = (Rt - 8940.0)/2326.0;   //Normalization
+  ntcTemp = -0.255*Rt*Rt*Rt + 2.107*Rt*Rt - 11.99*Rt + 23.08;   //Calibration temp in celsius
   return ntcTemp;
   }
   
